@@ -10,7 +10,6 @@ export default function MatchRoomPage() {
   const { data: session, status, update } = useSession();
 
   const router = useRouter();
-  console.log(session);
 
   const [table, setTable] = useState(["", "", "", "", "", "", "", "", ""]);
   // by default player is X
@@ -18,6 +17,7 @@ export default function MatchRoomPage() {
   const [result, setResult] = useState("");
   const [winner, setWinner] = useState("");
   const [logPlay, setLogPlay] = useState([]);
+  const [isSaved, setIsSaved] = useState(false);
 
   const handleClickTable = (index) => {
     if (result) {
@@ -39,50 +39,12 @@ export default function MatchRoomPage() {
   };
 
   const handleNewGame = async () => {
-    if (result && winner) {
-      const isWin = winner === "X";
-      let scoreChange = isWin ? 1 : -1;
-      let steak = session?.user?.steak;
-
-      if (isWin) {
-        if (steak == 2) {
-          scoreChange++;
-          steak = 0;
-        } else {
-          steak++;
-        }
-      } else {
-        steak = 0;
-      }
-
-      try {
-        const res = await fetch("/api/players/score", {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            playerId: session?.user?.id,
-            scoreChange,
-            steak,
-          }),
-        });
-
-        if (!res.ok) {
-          throw new Error("Failed to update score");
-        }
-
-        await update();
-      } catch (error) {
-        console.error("Update score error:", error);
-      }
-    }
-
     setTable(["", "", "", "", "", "", "", "", ""]);
     setTurn("X");
     setResult("");
     setWinner("");
     setLogPlay([]);
+    setIsSaved(false);
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -153,6 +115,60 @@ export default function MatchRoomPage() {
     }
   };
 
+  const saveAndUpdateScore = async () => {
+    if (!winner || isSaved) return;
+
+    const isWin = winner === "X";
+    let scoreChange = isWin ? 1 : -1;
+    let steak = session?.user?.steak ?? 0;
+
+    if (isWin) {
+      if (steak === 2) {
+        scoreChange++;
+        steak = 0;
+      } else {
+        steak++;
+      }
+    } else {
+      steak = 0;
+    }
+
+    try {
+      const scoreRes = await fetch("/api/players/score", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playerId: session?.user?.id,
+          scoreChange,
+          steak,
+        }),
+      });
+
+      if (!scoreRes.ok) {
+        throw new Error("Failed to update score");
+      }
+
+      const logRes = await fetch("/api/gamelog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playerId: session?.user?.id,
+          winner,
+          game_log: logPlay,
+        }),
+      });
+
+      if (!logRes.ok) {
+        throw new Error("Failed to save game log");
+      }
+
+      await update();
+      setIsSaved(true);
+    } catch (error) {
+      console.error("Save game error:", error);
+    }
+  };
+
   const handleQuitRoom = () => {
     router.push(`/playground`);
   };
@@ -168,6 +184,14 @@ export default function MatchRoomPage() {
     }
   }, [status, router]);
 
+  useEffect(() => {
+    if (!isSaved) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      saveAndUpdateScore();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [winner, isSaved]);
+
   return (
     <div className="px-4 py-2">
       <header className="flex justify-between items-center shadow-2xs mb-2 pb-2">
@@ -177,7 +201,7 @@ export default function MatchRoomPage() {
             Player Name: {session?.user?.name}
           </p>
           <p className="whitespace-nowrap">Score: {session?.user?.score}</p>
-          <p className="whitespace-nowrap">Seak: {session?.user?.steak}</p>
+          <p className="whitespace-nowrap">Steak: {session?.user?.steak}</p>
         </div>
       </header>
       <div className="min-h-full mx-auto w-full">

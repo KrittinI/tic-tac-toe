@@ -36,3 +36,11 @@ CREATE TABLE accounts (
         REFERENCES players(id)
         ON DELETE CASCADE
 );
+
+CREATE TABLE gamelogs (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    winner VARCHAR(10) NOT NULL,
+    game_log TEXT[] NOT NULL,
+    created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+)
