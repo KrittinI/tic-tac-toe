@@ -137,7 +137,7 @@ export const authOptions = {
 
       if (email) {
         const { rows } = await pool.query(
-          `SELECT id, score FROM PLAYERS WHERE email = $1`,
+          `SELECT id, score, steak FROM PLAYERS WHERE email = $1`,
           [email]
         );
 
@@ -146,6 +146,7 @@ export const authOptions = {
         if (player) {
           token.id = player.id;
           token.score = player.score;
+          token.steak = player.steak || 0;
         }
       }
 
@@ -156,6 +157,7 @@ export const authOptions = {
         session.user.id = token.id;
         session.user.image = token.picture;
         session.user.score = token.score;
+        session.user.steak = token.steak;
       }
 
       return session;

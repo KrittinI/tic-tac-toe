@@ -52,6 +52,7 @@ export default function PlaygroundPage() {
             Player Name: {session?.user?.name}
           </p>
           <p className="whitespace-nowrap">Score: {session?.user?.score}</p>
+          <p className="whitespace-nowrap">Steak: {session?.user?.steak}</p>
           <Button
             onClick={() => signOut({ callbackUrl: "/" })}
             text={"Logout"}

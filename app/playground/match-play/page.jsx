@@ -7,13 +7,16 @@ import { useEffect } from "react";
 import Button from "../../components/Button";
 
 export default function MatchRoomPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
 
   const router = useRouter();
+  console.log(session);
 
   const [table, setTable] = useState(["", "", "", "", "", "", "", "", ""]);
+  // by default player is X
   const [turn, setTurn] = useState("X");
   const [result, setResult] = useState("");
+  const [winner, setWinner] = useState("");
   const [logPlay, setLogPlay] = useState([]);
 
   const handleClickTable = (index) => {
@@ -35,10 +38,50 @@ export default function MatchRoomPage() {
     }
   };
 
-  const handleResetGame = () => {
+  const handleNewGame = async () => {
+    if (result && winner) {
+      const isWin = winner === "X";
+      let scoreChange = isWin ? 1 : -1;
+      let steak = session?.user?.steak;
+
+      if (isWin) {
+        if (steak == 2) {
+          scoreChange++;
+          steak = 0;
+        } else {
+          steak++;
+        }
+      } else {
+        steak = 0;
+      }
+
+      try {
+        const res = await fetch("/api/players/score", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            playerId: session?.user?.id,
+            scoreChange,
+            steak,
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to update score");
+        }
+
+        await update();
+      } catch (error) {
+        console.error("Update score error:", error);
+      }
+    }
+
     setTable(["", "", "", "", "", "", "", "", ""]);
     setTurn("X");
     setResult("");
+    setWinner("");
     setLogPlay([]);
   };
 
@@ -61,6 +104,7 @@ export default function MatchRoomPage() {
 
     if (table.every((block) => block !== "")) {
       setResult("Draw");
+      setWinner("-");
       return;
     }
   };
@@ -73,6 +117,8 @@ export default function MatchRoomPage() {
         table[i * 3] !== ""
       ) {
         setResult(table[i * 3] + " is winner!!");
+        setWinner(table[i * 3]);
+
         break;
       }
     }
@@ -86,6 +132,7 @@ export default function MatchRoomPage() {
         table[i] !== ""
       ) {
         setResult(table[i] + " is winner!!");
+        setWinner(table[i]);
         break;
       }
     }
@@ -94,10 +141,14 @@ export default function MatchRoomPage() {
   const validateDiagonal = (table) => {
     if (table[0] === table[4] && table[0] === table[8] && table[0] !== "") {
       setResult(table[0] + " is winner!!");
+      setWinner(table[0]);
+
       return;
     }
     if (table[2] === table[4] && table[2] === table[6] && table[2] !== "") {
       setResult(table[2] + " is winner!!");
+      setWinner(table[2]);
+
       return;
     }
   };
@@ -126,6 +177,7 @@ export default function MatchRoomPage() {
             Player Name: {session?.user?.name}
           </p>
           <p className="whitespace-nowrap">Score: {session?.user?.score}</p>
+          <p className="whitespace-nowrap">Seak: {session?.user?.steak}</p>
         </div>
       </header>
       <div className="min-h-full mx-auto w-full">
@@ -153,7 +205,7 @@ export default function MatchRoomPage() {
           </div>
         </div>
         <div className="w-full flex justify-center gap-2 mt-2">
-          <Button onClick={handleResetGame} text={"Reset"} />
+          <Button onClick={handleNewGame} text={"New Game"} />
           <Button onClick={handleQuitRoom} text={"Quit Room"} />
         </div>
       </div>
