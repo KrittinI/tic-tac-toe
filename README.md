@@ -1,36 +1,176 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tic-Tac-Toe
 
-## Getting Started
+เกม Tic-Tac-Toe ที่พัฒนาด้วย Next.js โดยผู้เล่นสามารถเล่นกับ Bot และมีระบบคะแนน รวมถึงบันทึกประวัติการเล่นลง Database
 
-First, run the development server:
+## ฟีเจอร์
+
+* สมัครสมาชิกด้วย Email และ Password
+* Login ด้วย Google
+* Login ด้วย LINE
+* เล่น Tic-Tac-Toe กับ Bot
+* ระบบคะแนน
+* ระบบ Winning Streak
+* บันทึกประวัติการเล่น
+* Bot มีความยากตาม Score ของผู้เล่น
+* แสดง Score และ Streak ของผู้เล่น
+
+## เทคโนโลยีที่ใช้
+
+* Next.js
+* React
+* TypeScript
+* Tailwind CSS
+* NextAuth.js
+* PostgreSQL
+
+## ระบบ Bot
+
+Bot จะเล่นเป็นฝั่ง `O` และผู้เล่นจะเล่นเป็นฝั่ง `X`
+
+ระดับความยากของ Bot จะเปลี่ยนตาม Score ของผู้เล่น
+
+|      Score | ระดับ      | รูปแบบการเล่น                         |
+| ---------: | ---------- | ------------------------------------- |
+|     `< 20` | Easy       | สุ่มช่องในการเล่น                     |
+|  `20 - 69` | Normal     | พยายามชนะและป้องกันการแพ้             |
+| `70 - 100` | Hard       | ใช้ Minimax และมีการสุ่มบางครั้ง      |
+|    `> 100` | Impossible | ใช้ Minimax ในการเลือกช่องที่ดีที่สุด |
+
+## ระบบคะแนน
+
+เมื่อจบเกม ระบบจะคำนวณคะแนนตามผลการแข่งขัน
+
+| ผลการแข่งขัน |          คะแนน |
+| ------------ | -------------: |
+| ชนะ          |             +1 |
+| แพ้          |             -1 |
+| เสมอ         | ไม่เปลี่ยนแปลง |
+
+หากผู้เล่นชนะติดต่อกัน จะมีระบบ `Winning Streak` และได้รับคะแนนพิเศษตามเงื่อนไขที่กำหนดไว้ในระบบ
+
+## การติดตั้ง
+
+### 1. Clone Project
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd <project-folder>
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. ติดตั้ง Dependencies
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. ตั้งค่า Environment Variables
 
-## Learn More
+สร้างไฟล์ `.env`
 
-To learn more about Next.js, take a look at the following resources:
+```env
+DATABASE_URL=your_database_url
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+NEXTAUTH_SECRET=your_nextauth_secret
+NEXTAUTH_URL=http://localhost:3000
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
 
-## Deploy on Vercel
+LINE_CLIENT_ID=your_line_client_id
+LINE_CLIENT_SECRET=your_line_client_secret
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+NODE_ENV=development
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> อย่านำค่า Secret หรือข้อมูลที่เป็นความลับขึ้น GitHub
+
+### 4. ตั้งค่า Database
+
+สร้าง Database PostgreSQL และสร้าง Table ที่จำเป็นสำหรับระบบ เช่น
+
+* `players`
+* `accounts`
+* `gamelogs`
+
+## การ Run Project
+
+รัน Development Server
+
+```bash
+docker-compose up -d
+```
+
+เพือ run docker สำหรับ database ไว้ก่อน
+
+```bash
+pnpm dev
+```
+
+จากนั้นเปิด
+
+```text
+http://localhost:3000
+```
+
+## คำสั่งที่ใช้บ่อย
+
+| Command      | รายละเอียด             |
+| ------------ | ---------------------- |
+| `pnpm dev`   | Run Development Server |
+| `pnpm build` | Build Project          |
+| `pnpm start` | Run Production Server  |
+| `pnpm lint`  | ตรวจสอบโค้ดด้วย ESLint |
+
+## โครงสร้าง Project
+
+```text
+app/
+├── api/
+│   ├── auth/
+│   │   └── [...nextauth]/
+│   │       └── route.ts
+│   ├── players/
+│   │   └── score/
+│   │       └── route.ts
+│   └── gamelog/
+│       └── route.ts
+│
+├── matchroom/
+├── playground/
+├── signup/
+│
+components/
+│   └── Button.tsx
+│
+config/
+└── database.ts
+```
+
+## กติกาการเล่น
+
+1. ผู้เล่นจะเล่นเป็น `X`
+2. Bot จะเล่นเป็น `O`
+3. ผู้เล่น X เป็นฝ่ายเริ่มก่อน
+4. ผู้เล่นที่เรียงสัญลักษณ์ได้ 3 ช่องติดกันในแนวนอน แนวตั้ง หรือแนวทแยง จะเป็นผู้ชนะ
+5. หากช่องทั้ง 9 ช่องถูกใช้หมดโดยไม่มีผู้ชนะ จะถือว่าเสมอ
+
+## การบันทึก Game Log
+
+เมื่อจบเกม ระบบจะบันทึกข้อมูลลง `gamelogs` เช่น
+
+* ผู้เล่น
+* ผู้ชนะ
+* ลำดับการเล่น
+* วันที่และเวลาที่เล่น
+
+ตัวอย่าง `game_log`
+
+```text
+[0, 4, 1, 3, 8, 2, 6]
+```
+
+โดยแต่ละตัวเลขหมายถึงตำแหน่งช่องที่ผู้เล่นเลือก
+
+## จุดประสงค์ของ Project
+
+โปรเจกต์นี้สร้างขึ้นเพื่อฝึกการพัฒนา Web Application ด้วย Next.js รวมถึงการทำ Authentication, API Route, Database และการสร้าง Bot สำหรับเกม Tic-Tac-Toe
