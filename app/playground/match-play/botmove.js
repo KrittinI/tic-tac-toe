@@ -55,7 +55,7 @@ const minimax = (board, isMaximizing, depth) => {
   return bestScore;
 };
 
-export const getBestMove = (board) => {
+const getBestMove = (board) => {
   let bestScore = -Infinity;
   let bestMove = -1;
 
