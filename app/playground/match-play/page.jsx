@@ -2,9 +2,9 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Button from "../../components/Button";
+import { getBotMove } from "./botmove";
 
 export default function MatchRoomPage() {
   const { data: session, status, update } = useSession();
@@ -18,25 +18,6 @@ export default function MatchRoomPage() {
   const [winner, setWinner] = useState("");
   const [logPlay, setLogPlay] = useState([]);
   const [isSaved, setIsSaved] = useState(false);
-
-  const handleClickTable = (index) => {
-    if (result) {
-      return;
-    }
-    if (table[index]) {
-      return;
-    }
-    setTable((prev) => {
-      prev[index] = turn;
-      return [...prev];
-    });
-    setLogPlay((prev) => [...prev, index]);
-    if (turn === "X") {
-      setTurn("O");
-    } else {
-      setTurn("X");
-    }
-  };
 
   const handleNewGame = async () => {
     setTable(["", "", "", "", "", "", "", "", ""]);
@@ -119,6 +100,7 @@ export default function MatchRoomPage() {
     if (!winner || isSaved) return;
 
     const isWin = winner === "X";
+    const isDraw = winner === "-";
     let scoreChange = isWin ? 1 : -1;
     let steak = session?.user?.steak ?? 0;
 
@@ -130,22 +112,28 @@ export default function MatchRoomPage() {
         steak++;
       }
     } else {
-      steak = 0;
+      if (!isDraw) {
+        steak = 0;
+      } else {
+        scoreChange = 0;
+      }
     }
 
     try {
-      const scoreRes = await fetch("/api/players/score", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          playerId: session?.user?.id,
-          scoreChange,
-          steak,
-        }),
-      });
+      if (!isDraw) {
+        const scoreRes = await fetch("/api/players/score", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            playerId: session?.user?.id,
+            scoreChange,
+            steak,
+          }),
+        });
 
-      if (!scoreRes.ok) {
-        throw new Error("Failed to update score");
+        if (!scoreRes.ok) {
+          throw new Error("Failed to update score");
+        }
       }
 
       const logRes = await fetch("/api/gamelog", {
@@ -191,6 +179,54 @@ export default function MatchRoomPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [winner, isSaved]);
+
+  const makeMove = useCallback(
+    (symbol, index) => {
+      if (result || table[index]) return;
+
+      const nextBoard = [...table];
+      nextBoard[index] = symbol;
+
+      setTable(nextBoard);
+      setLogPlay((prev) => [...prev, index]);
+
+      const win = validateresult(nextBoard);
+
+      if (win) {
+        setWinner(win);
+        setResult(`${win} is winner!!`);
+        return;
+      }
+
+      if (nextBoard.every((cell) => cell !== "")) {
+        setWinner("-");
+        setResult("Draw");
+        return;
+      }
+
+      setTurn(symbol === "X" ? "O" : "X");
+    },
+    [table, result]
+  );
+
+  const handleClickTable = (index) => {
+    if (turn !== "X") return;
+    makeMove("X", index);
+  };
+
+  useEffect(() => {
+    if (turn !== "O" || result) return;
+
+    const timer = setTimeout(() => {
+      const bestMove = getBotMove(table, session?.user?.score);
+
+      if (bestMove !== -1) {
+        makeMove("O", bestMove);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [turn, result, table, makeMove]);
 
   return (
     <div className="px-4 py-2">
