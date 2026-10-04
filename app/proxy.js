@@ -2,7 +2,7 @@
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 
-export async function middleware(request: any) {
+export async function middleware(request) {
   console.log(request);
   const user = await getToken({
     req: request,

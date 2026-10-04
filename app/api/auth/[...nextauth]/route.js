@@ -1,9 +1,9 @@
+import bcrypt from "bcrypt";
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import LineProvider from "next-auth/providers/line";
 import { pool } from "../../../../config/database";
-import bcrypt from "bcrypt";
 
 export const authOptions = {
   providers: [
@@ -31,6 +31,8 @@ export const authOptions = {
             id: user.id,
             name: user.name,
             email: user.email,
+            image: user.image,
+            score: user.score,
           };
         } else {
           throw new Error("Invalid email or password");
@@ -131,20 +133,35 @@ export const authOptions = {
       }
     },
     jwt: async ({ token, user }) => {
-      if (user) {
-        token.id = user.id;
+      const email = user?.email ?? token.email;
+
+      if (email) {
+        const { rows } = await pool.query(
+          `SELECT id, score FROM PLAYERS WHERE email = $1`,
+          [email]
+        );
+
+        const player = rows[0];
+
+        if (player) {
+          token.id = player.id;
+          token.score = player.score;
+        }
       }
+
       return token;
     },
     session: async ({ session, token }) => {
       if (session.user) {
         session.user.id = token.id;
         session.user.image = token.picture;
+        session.user.score = token.score;
       }
+
       return session;
     },
     async redirect({ baseUrl }) {
-      return `${baseUrl}/profile`;
+      return `${baseUrl}/playground`;
     },
   },
 };

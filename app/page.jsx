@@ -1,33 +1,33 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function SignIn() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const router = useRouter()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const router = useRouter();
 
-  const handleSubmit = async (e: any) => {
-    e.preventDefault()
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      const result = await signIn('credentials', {
+      const result = await signIn("credentials", {
         redirect: false,
         email,
         password,
-      })
-
+      });
 
       if (result && result.error) {
-        console.error(result.error)
+        console.error(result.error);
       } else {
-        router.push('/profile')
+        router.push("/playground");
       }
     } catch (error) {
-      console.log('error', error)
+      console.log("error", error);
     }
-  }
+  };
 
   return (
     <div className="flex h-screen items-center justify-center">
@@ -63,11 +63,16 @@ export default function SignIn() {
         >
           Sign In
         </button>
-        <hr
-          className='mb-4 border-gray-300' />
+        <hr className="mb-4 border-gray-300" />
+        <Link
+          href={`/signup`}
+          className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded mb-2"
+        >
+          Sign Up
+        </Link>
         <button
           type="button"
-          onClick={() => signIn('google')}
+          onClick={() => signIn("google")}
           className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded mb-2"
         >
           <svg
@@ -82,10 +87,11 @@ export default function SignIn() {
         </button>
         <button
           type="button"
-          onClick={() => signIn('line')}
+          onClick={() => signIn("line")}
           className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded"
         >
-          <svg xmlns="http://www.w3.org/2000/svg"
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 512 512"
             width={20}
             height={20}
@@ -96,5 +102,5 @@ export default function SignIn() {
         </button>
       </form>
     </div>
-  )
+  );
 }
